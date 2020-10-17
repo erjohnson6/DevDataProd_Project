@@ -1,0 +1,70 @@
+---
+title: "COVID19 States Comparison"
+author: "Eric Johnson"
+date: "10/17/2020"
+output: slidy_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## COVID19 States Comparison
+
+This presentation gives a brief overview of the COVID19 States Comparison Shiny web app.
+
+## What the App Does
+
+- Allows user to select which states they would like to compare
+- Plots the Confirmed COVID cases for the selected states on an interactive graph on a log scale
+- Calculates the 10-day GrowthRate assuming a fixed percentage compound growth rate over 10-days
+
+Data has been pulled from the following website:
+https://github.com/CSSEGISandData/COVID-19/raw/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv
+
+## Example Plot
+
+```{r download, echo = FALSE, message=FALSE}
+suppressWarnings(suppressPackageStartupMessages(library(data.table)))
+suppressPackageStartupMessages(library(dplyr))
+suppressPackageStartupMessages(library(ggplot2))
+suppressPackageStartupMessages(library(lubridate))
+suppressPackageStartupMessages(library(plotly))
+
+webpathConf <- "https://github.com/CSSEGISandData/COVID-19/raw/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv"
+StartDate <- "2020-03-01"
+fileName <- "time_series_covid19_confirmed_US.csv"
+
+if(!file.exists(fileName)) {
+   download.file(webpathConf, destfile = fileName, mode='wb')
+}
+USConfWide <- as.data.table(read.csv(fileName))
+USConfNarrow <- melt(USConfWide, id.vars = 1:11, value.name = "Confirmed", variable.name = "Date")
+USConfNarrow$Confirmed <- replace(USConfNarrow$Confirmed, USConfNarrow$Confirmed == 0, NA)
+USConfNarrow$Date <- mdy(gsub("X", "", USConfNarrow$Date))
+COVID.States <- filter(USConfNarrow, Date > StartDate)
+COVID.States <- group_by(as_tibble(COVID.States), Province_State, Date)
+COVID.States <- summarise(COVID.States, Confirmed = sum(Confirmed, na.rm = TRUE))
+
+stateList <- c("Idaho", "Alabama", "Minnesota")
+
+```
+
+Below is an example plot:
+``` {r graf, echo=FALSE, warning=FALSE}
+plot_ly(COVID.States, x = ~Date, y = ~Confirmed, color = ~Province_State) %>%
+   layout(yaxis = list(type = "log")) %>%
+   filter(Province_State %in% stateList) %>%
+   add_lines() 
+
+# plot_ly(data = COVID.States, x = ~Date, y = ~Confirmed, 
+#         color = ~Country.Region, type = "scatter", mode = "lines")
+
+```
+
+## Future work
+
+The following is future work that could/will be done to improve the webapp:
+
+1. Speed up initial page loading
+2. Create an update button to allow the user to manually update the COVID19 data
