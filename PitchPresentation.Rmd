@@ -51,7 +51,7 @@ stateList <- c("Idaho", "Alabama", "Minnesota")
 ```
 
 Below is an example plot:
-``` {r graf, echo=FALSE, warning=FALSE}
+``` {r graf, echo=TRUE, warning=FALSE}
 plot_ly(COVID.States, x = ~Date, y = ~Confirmed, color = ~Province_State) %>%
    layout(yaxis = list(type = "log")) %>%
    filter(Province_State %in% stateList) %>%
